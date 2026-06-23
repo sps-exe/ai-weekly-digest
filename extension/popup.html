@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI Weekly Digest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="popup.css"/>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">
+    <img src="icons/icon48.png" alt="logo" class="logo-img"/>
+    <div>
+      <h1>AI Weekly Digest</h1>
+      <p class="tagline">Groq · Pexels · LinkedIn</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button id="btnRefresh" class="icon-btn" title="Refresh news">↻</button>
+    <button id="btnGear"    class="icon-btn" title="Settings">⚙</button>
+  </div>
+</header>
+
+<!-- ── Settings Panel (collapsible) ── -->
+<section id="settingsPanel" class="panel" style="display:none">
+  <h2 class="panel-title">API Keys</h2>
+  <div class="field-group">
+    <label for="inputGroqKey">Groq Key <span class="req">*</span></label>
+    <div class="input-wrap">
+      <input type="password" id="inputGroqKey" placeholder="gsk_…" autocomplete="off"/>
+      <button class="eye-btn" onclick="toggleVis('inputGroqKey',this)">👁</button>
+    </div>
+    <p class="hint">Free at <a href="https://console.groq.com" target="_blank">console.groq.com</a> — no card needed</p>
+  </div>
+  <div class="field-group">
+    <label for="inputPexelsKey">Pexels Key <span class="opt">(optional)</span></label>
+    <div class="input-wrap">
+      <input type="password" id="inputPexelsKey" placeholder="Leave blank to use AI images" autocomplete="off"/>
+      <button class="eye-btn" onclick="toggleVis('inputPexelsKey',this)">👁</button>
+    </div>
+    <p class="hint">Free at <a href="https://www.pexels.com/api/" target="_blank">pexels.com/api</a></p>
+  </div>
+  <button id="btnSaveKeys" class="btn btn-primary">Save &amp; Load</button>
+</section>
+
+<!-- ── Loading ── -->
+<div id="loadingView" class="loading-view" style="display:none">
+  <div class="spinner"></div>
+  <p id="loadingLabel">Fetching AI news…</p>
+</div>
+
+<!-- ── Error ── -->
+<div id="errorView" class="error-view" style="display:none">
+  <span class="err-icon">⚠️</span>
+  <p id="errorMsg">Something went wrong.</p>
+  <button class="btn btn-ghost btn-sm" onclick="initDashboard()">Retry</button>
+</div>
+
+<!-- ── Main Content ── -->
+<main id="contentView" style="display:none">
+
+  <!-- Top Story -->
+  <section class="card top-story" id="topStoryCard">
+    <div class="card-meta">
+      <span class="source-tag" id="storySource"></span>
+      <span class="story-date" id="storyDate"></span>
+      <span class="score-badge" id="storyScore"></span>
+    </div>
+    <h3 class="story-title" id="storyTitle"></h3>
+    <p  class="story-summary" id="storySummary"></p>
+    <a  class="story-link" id="storyLink" href="#" target="_blank" rel="noopener">Read full story ↗</a>
+  </section>
+
+  <!-- Other Stories (collapsed) -->
+  <details class="others-details">
+    <summary>View more stories</summary>
+    <div class="news-list" id="newsList"></div>
+  </details>
+
+  <div class="divider"></div>
+
+  <!-- Image Picker -->
+  <section class="image-section">
+    <div class="section-header">
+      <span class="section-label">📸 Cover Image</span>
+      <button id="btnNewImg" class="btn btn-ghost btn-xs">New Images</button>
+    </div>
+    <div id="imageGrid" class="image-grid">
+      <div class="img-loading">
+        <div class="spinner sm"></div>
+      </div>
+    </div>
+    <div id="selectedImageActions" style="display:none;margin-top:8px">
+      <button id="btnDownloadImg" class="btn btn-ghost btn-xs full-w">⬇ Download Selected Image</button>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- LinkedIn Post -->
+  <section class="post-section">
+    <div class="section-header">
+      <span class="section-label">💼 LinkedIn Post</span>
+      <button id="btnRegen" class="btn btn-ghost btn-xs" disabled>♻ Regen</button>
+    </div>
+    <div id="postSpinner" class="post-spinner" style="display:none">
+      <div class="spinner sm"></div>
+      <span>Generating with Llama 3.3 70B…</span>
+    </div>
+    <div id="postBox" class="post-box placeholder">Post will appear here…</div>
+    <div id="postErr" class="post-error" style="display:none"></div>
+  </section>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button id="btnCopy" class="btn btn-success" disabled>📋 Copy Post</button>
+    <button id="btnFill" class="btn btn-primary" disabled>⚡ Fill LinkedIn Draft</button>
+  </div>
+
+</main>
+
+<!-- ── Toast ── -->
+<div id="toast"></div>
+
+<script src="popup.js"></script>
+</body>
+</html>

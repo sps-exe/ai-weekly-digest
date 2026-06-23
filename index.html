@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI Weekly Digest — Personal AI News Curator</title>
+  <meta name="description" content="Curate the top AI news stories and auto-generate a LinkedIn post using Groq (free)."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+/* ── Reset & Tokens ──────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1e;--surface:#111827;--card:#161f35;--card-h:#1c2847;
+  --accent:#00d4ff;--accent-d:rgba(0,212,255,.15);--accent-g:rgba(0,212,255,.35);
+  --t1:#f0f6ff;--t2:#8899b4;--t3:#4a5876;
+  --border:rgba(0,212,255,.12);--border-s:rgba(0,212,255,.35);
+  --success:#22d3a5;--error:#ff4d6d;--warn:#f59e0b;
+  --r-sm:8px;--r-md:14px;--r-lg:20px;
+  --shadow:0 4px 24px rgba(0,0,0,.45);--glow:0 0 32px var(--accent-g);
+  --ease:all .22s cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;line-height:1.6;
+  background-image:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(0,212,255,.06) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 30% at 90% 80%,rgba(99,102,241,.05) 0%,transparent 50%)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent-d);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;line-height:1.25}
+.container{max-width:1100px;margin:0 auto;padding:0 20px}
+/* ── Header ────────────────────────────────────────── */
+header{padding:24px 0 18px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+  background:rgba(10,15,30,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),#6366f1);
+  border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:0 0 16px var(--accent-g);flex-shrink:0}
+.logo-text h1{font-size:1.3rem;background:linear-gradient(90deg,#fff 55%,var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-text p{font-size:.7rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+.header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* ── Buttons ─────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:var(--r-sm);
+  font-size:.855rem;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;
+  border:none;transition:var(--ease);white-space:nowrap;line-height:1}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;padding:9px 18px}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 20px var(--accent-g)}
+.btn-ghost{background:rgba(255,255,255,.04);color:var(--t2);border:1px solid var(--border);padding:9px 18px}
+.btn-ghost:hover:not(:disabled){background:var(--accent-d);color:var(--accent);border-color:var(--border-s)}
+.btn-success{background:linear-gradient(135deg,var(--success),#16a87f);color:#000;padding:9px 18px}
+.btn-success:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 16px rgba(34,211,165,.4)}
+.btn-sm{padding:7px 13px;font-size:.8rem}
+/* ── API Key Card ─────────────────────────────────── */
+#apiSection{padding:24px 0;border-bottom:1px solid var(--border)}
+.api-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:22px 26px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.api-icon{font-size:1.7rem;flex-shrink:0;margin-top:2px}
+.api-body{flex:1;min-width:220px}
+.api-body h3{font-size:1rem;margin-bottom:4px}
+.api-body p{font-size:.8rem;color:var(--t2);margin-bottom:10px}
+.api-row{display:flex;gap:10px;flex-wrap:wrap}
+.api-inp-wrap{position:relative;flex:1;min-width:200px}
+.api-inp-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:9px 36px 9px 12px;color:var(--t1);
+  font-size:.86rem;font-family:'Inter',sans-serif;outline:none;transition:var(--ease)}
+.api-inp-wrap input::placeholder{color:var(--t3)}
+.api-inp-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-d)}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--t3);cursor:pointer;font-size:.9rem;padding:0}
+.eye:hover{color:var(--accent)}
+.saved-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(34,211,165,.12);
+  color:var(--success);border:1px solid rgba(34,211,165,.25);border-radius:99px;
+  padding:4px 10px;font-size:.73rem;font-weight:600}
+/* ── Main ─────────────────────────────────────────── */
+main{padding:30px 0 60px}
+.stats-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:99px;
+  padding:5px 13px;font-size:.78rem;color:var(--t2);display:flex;align-items:center;gap:5px}
+.chip .v{color:var(--accent);font-weight:700;font-family:'Space Grotesk',sans-serif}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+.sec-title{display:flex;align-items:center;gap:9px;font-size:1rem;font-weight:700;color:var(--t1)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex-shrink:0}
+.divider{height:1px;background:var(--border);margin:28px 0}
+/* ── Source pills ─────────────────────────────────── */
+.src-pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.pill{font-size:.7rem;font-weight:600;padding:3px 11px;border-radius:99px;
+  border:1px solid var(--border);color:var(--t3);background:var(--card);transition:var(--ease)}
+.pill.loading{color:var(--warn);border-color:rgba(245,158,11,.3);animation:pulse 1.2s ease infinite}
+.pill.done{color:var(--success);border-color:rgba(34,211,165,.3);background:rgba(34,211,165,.07)}
+.pill.fail{color:var(--error);border-color:rgba(255,77,109,.3)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* ── LinkedIn Card ───────────────────────────────── */
+.li-card{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r-lg);
+  padding:26px 30px;box-shadow:var(--glow);position:relative;overflow:hidden;margin-bottom:28px}
+.li-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),#6366f1,var(--accent));background-size:200%;
+  animation:shimmer 3s linear infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.li-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.li-profile{display:flex;align-items:center;gap:11px}
+.li-avatar{width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,#0077b5,var(--accent));
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.li-info h4{font-size:.9rem;font-weight:600}
+.li-info p{font-size:.72rem;color:var(--t3)}
+.post-box{background:var(--surface);border-radius:var(--r-md);padding:18px 20px;
+  font-size:.88rem;line-height:1.78;color:var(--t1);white-space:pre-wrap;
+  word-break:break-word;min-height:110px;border:1px solid var(--border)}
+.post-box.placeholder{color:var(--t3);font-style:italic;display:flex;align-items:center;justify-content:center}
+.li-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+/* ── Image Section ───────────────────────────────── */
+.img-section{margin-bottom:28px}
+.img-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+.img-card{border-radius:var(--r-md);overflow:hidden;cursor:pointer;
+  border:2px solid transparent;transition:var(--ease);position:relative;
+  background:var(--surface)}
+.img-card img{width:100%;height:160px;object-fit:cover;display:block;transition:var(--ease)}
+.img-card:hover{border-color:rgba(0,212,255,.5);transform:translateY(-2px)}
+.img-card.selected{border-color:var(--accent);box-shadow:0 0 16px var(--accent-g)}
+.img-card.selected::after{content:'✓ Selected';position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,212,255,.85);color:#000;font-size:.65rem;font-weight:800;
+  padding:4px;text-align:center;letter-spacing:.05em}
+.img-meta{padding:8px 10px}
+.img-src-label{font-size:.62rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.img-credit{font-size:.7rem;color:var(--t3);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.img-actions{display:flex;gap:8px}
+.img-loading{display:flex;justify-content:center;padding:32px;grid-column:1/-1}
+/* ── News Cards ───────────────────────────────────── */
+.news-grid{display:flex;flex-direction:column;gap:12px}
+.news-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:18px 20px;display:flex;gap:16px;align-items:flex-start;
+  transition:var(--ease);position:relative;overflow:hidden}
+.news-card:hover{background:var(--card-h);border-color:rgba(0,212,255,.2);transform:translateX(3px)}
+.news-card.rank-1{border-color:var(--border-s);background:linear-gradient(135deg,#131e38,var(--card));
+  box-shadow:0 0 20px rgba(0,212,255,.15),var(--shadow)}
+.news-card.rank-1::before{content:'🏆 TOP';position:absolute;top:12px;right:12px;
+  background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;
+  font-size:.6rem;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:99px}
+.rank-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.88rem;flex-shrink:0;margin-top:2px}
+.rank-1 .rank-badge{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;box-shadow:0 0 10px var(--accent-g)}
+.rank-badge.o{background:rgba(255,255,255,.05);color:var(--t3);border:1px solid var(--border)}
+.nbody{flex:1;min-width:0}
+.nmeta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.src-tag{background:var(--accent-d);color:var(--accent);border-radius:99px;
+  padding:2px 8px;font-size:.68rem;font-weight:600}
+.ndate{font-size:.68rem;color:var(--t3)}
+.nscore{font-size:.68rem;font-weight:700;color:var(--warn);background:rgba(245,158,11,.12);
+  padding:2px 7px;border-radius:99px}
+.ntitle{font-family:'Space Grotesk',sans-serif;font-size:.95rem;font-weight:600;
+  margin-bottom:6px;line-height:1.38}
+.news-card.rank-1 .ntitle{color:#fff;font-size:1.02rem}
+.nsummary{font-size:.8rem;color:var(--t2);line-height:1.58;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nlink{display:inline-flex;align-items:center;gap:3px;margin-top:9px;
+  color:var(--accent);font-size:.75rem;font-weight:600;text-decoration:none;transition:var(--ease)}
+.nlink:hover{opacity:.75}
+/* ── Spinner / Empty / Error ──────────────────────── */
+.spin-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:44px 0}
+.spinner{width:38px;height:38px;border-radius:50%;border:3px solid var(--border);
+  border-top-color:var(--accent);animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-lbl{color:var(--t2);font-size:.86rem}
+.err-banner{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);
+  border-radius:var(--r-md);padding:12px 16px;display:flex;align-items:flex-start;
+  gap:9px;font-size:.83rem;color:#ff8fa0}
+.empty-state{text-align:center;padding:56px 20px}
+.empty-icon{font-size:3rem;margin-bottom:14px;opacity:.5}
+.empty-title{font-size:1.15rem;margin-bottom:6px}
+.empty-desc{font-size:.85rem;color:var(--t2);max-width:360px;margin:0 auto 20px}
+/* ── Toast ─────────────────────────────────────────── */
+#toast{position:fixed;bottom:24px;right:20px;z-index:9999;background:var(--card);
+  border:1px solid var(--border-s);border-radius:var(--r-md);padding:11px 18px;
+  font-size:.83rem;font-weight:600;color:var(--success);box-shadow:0 8px 28px rgba(0,0,0,.5);
+  display:flex;align-items:center;gap:7px;transform:translateY(70px);opacity:0;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+/* ── Footer ─────────────────────────────────────────── */
+footer{border-top:1px solid var(--border);padding:18px 0;text-align:center;
+  font-size:.73rem;color:var(--t3)}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+/* ── Responsive ─────────────────────────────────────── */
+@media(max-width:640px){
+  .header-inner{flex-direction:column;align-items:flex-start}
+  .li-card{padding:18px 16px}
+  .news-card{padding:14px}
+  .api-card{padding:16px}
+  .img-grid{grid-template-columns:1fr}
+  .img-card img{height:140px}
+}
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────── -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">🧠</div>
+        <div class="logo-text">
+          <h1>AI Weekly Digest</h1>
+          <p>Groq · Pexels · LinkedIn</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div id="savedBadge" style="display:none" class="saved-badge">✓ Keys Saved</div>
+        <button class="btn btn-ghost btn-sm" id="btnRefresh" onclick="refreshAll()" disabled>🔄 Refresh</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ───────────────────────────────────── -->
+<main>
+  <div class="container">
+
+    <!-- API Keys -->
+    <div id="apiSection">
+      <div class="api-card">
+        <div class="api-icon">🔑</div>
+        <div class="api-body">
+          <h3>API Keys (stored locally — never sent to any server other than the APIs themselves)</h3>
+          <p>Groq is free — sign up at <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a>.
+             Pexels is optional — <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--accent)">pexels.com/api</a> (free, real photos). Without it, AI-generated images are used.</p>
+          <div class="api-row">
+            <div class="api-inp-wrap">
+              <input type="password" id="inpGroq"   placeholder="Groq key: gsk_…" autocomplete="off" onkeydown="if(event.key==='Enter')saveKeys()"/>
+              <button class="eye" onclick="toggleVis('inpGroq',this)">👁</button>
+            </div>
+            <div class="api-inp-wrap">
+              <input type="password" id="inpPexels" placeholder="Pexels key (optional)" autocomplete="off" onkeydown="if(event.key==='Enter')saveKeys()"/>
+              <button class="eye" onclick="toggleVis('inpPexels',this)">👁</button>
+            </div>
+            <button class="btn btn-primary" onclick="saveKeys()">Save &amp; Load</button>
+            <button class="btn btn-ghost btn-sm" id="btnClear" onclick="clearKeys()" style="display:none">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="empty-state">
+      <div class="empty-icon">🤖</div>
+      <h2 class="empty-title">Welcome to AI Weekly Digest</h2>
+      <p class="empty-desc">Enter your Groq API key above (free, no credit card) to fetch today's top AI stories and generate a LinkedIn-ready post.</p>
+      <button class="btn btn-primary" onclick="document.getElementById('inpGroq').focus()">→ Enter Groq Key</button>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" style="display:none;padding-top:26px">
+
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="chip">📰 Fetched: <span class="v" id="statFetched">0</span></div>
+        <div class="chip">⚡ Showing top 5</div>
+        <div class="chip">🕒 <span class="v" id="statTime">—</span></div>
+      </div>
+
+      <!-- Source pills -->
+      <div class="src-pills" id="srcPills"></div>
+
+      <!-- LinkedIn Post -->
+      <div class="sec-header">
+        <div class="sec-title"><span class="dot"></span> LinkedIn Post — #1 Story</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" id="btnRegen" onclick="regeneratePost()" disabled>♻️ Regenerate</button>
+        </div>
+      </div>
+      <div class="li-card">
+        <div class="li-header">
+          <div class="li-profile">
+            <div class="li-avatar">👨‍💻</div>
+            <div class="li-info"><h4>You</h4><p>CS + AI Undergrad</p></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="postSpinner" style="display:none"><div class="spinner" style="width:22px;height:22px;border-width:2px"></div></div>
+            <button class="btn btn-success btn-sm" id="btnCopy" onclick="copyPost()" disabled>📋 Copy</button>
+          </div>
+        </div>
+        <div class="post-box placeholder" id="postBox">Generating your LinkedIn post…</div>
+        <div id="postErr" style="display:none;margin-top:10px"></div>
+        <div class="li-actions" id="liActions" style="display:none">
+          <span style="font-size:.75rem;color:var(--t3)">
+            💡 Tip: <strong style="color:var(--t2)">Copy the post + download an image below</strong>, then paste both into LinkedIn manually.
+          </span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Image Section -->
+      <div class="img-section" id="imgSection" style="display:none">
+        <div class="sec-header">
+          <div class="sec-title"><span class="dot"></span> Cover Image</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" id="btnNewImg" onclick="fetchImages()">🔄 New Images</button>
+          </div>
+        </div>
+        <div class="img-grid" id="imgGrid">
+          <div class="img-loading"><div class="spinner" style="width:28px;height:28px;border-width:2px"></div></div>
+        </div>
+        <div class="img-actions" id="imgActions" style="display:none">
+          <button class="btn btn-primary btn-sm" id="btnDownload" onclick="downloadImg()">⬇ Download Selected</button>
+          <span style="font-size:.72rem;color:var(--t3);display:flex;align-items:center">then attach it manually in LinkedIn</span>
+        </div>
+      </div>
+
+      <div class="divider" id="imgDivider" style="display:none"></div>
+
+      <!-- News Feed -->
+      <div class="sec-header">
+        <div class="sec-title"><span class="dot"></span> Top 5 AI Stories</div>
+      </div>
+      <div id="newsLoading" class="spin-wrap">
+        <div class="spinner"></div>
+        <div class="spin-lbl">Fetching from 4 AI sources…</div>
+      </div>
+      <div id="newsErr"  style="display:none"></div>
+      <div class="news-grid" id="newsGrid"></div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>AI Weekly Digest &mdash; 100% free · Powered by <a href="https://groq.com" target="_blank">Groq</a> (Llama 3.3 70B) ·
+       Images by <a href="https://pexels.com" target="_blank">Pexels</a> / <a href="https://pollinations.ai" target="_blank">Pollinations.ai</a></p>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════
+   CONSTANTS
+══════════════════════════════ */
+const GROQ_EP    = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const PROXY      = 'https://api.rss2json.com/v1/api.json?rss_url=';
+const PEXELS_EP  = 'https://api.pexels.com/v1/search';
+const POLLIN     = 'https://image.pollinations.ai/prompt/';
+
+const SOURCES = [
+  { name:'The Hacker News', url:'https://feeds.feedburner.com/TheHackersNews',                        filterAI:true  },
+  { name:'The Algorithm',   url:'https://rss.beehiiv.com/feeds/thealgorithmsubstack.com.xml',         filterAI:false },
+  { name:'TechCrunch',      url:'https://techcrunch.com/feed/',                                       filterAI:true  },
+  { name:'AI News',         url:'https://www.artificialintelligence-news.com/feed/',                  filterAI:false }
+];
+
+const BOOSTS = [
+  ['breakthrough',8],['launch',5],['released',5],['open source',6],['open-source',6],
+  ['gpt',7],['llm',6],['claude',7],['gemini',7],['research',4],['robot',5],['agent',5],
+  ['new model',8],['state-of-the-art',7],['beats',5],['surpasses',6],['human-level',8],
+  ['multimodal',5],['reasoning',4],['fine-tuning',4],['openai',6],['anthropic',6],
+  ['billion parameters',6],['deepmind',6],['autonomous',5]
+];
+
+const AI_KW = [
+  'artificial intelligence','machine learning','deep learning','neural network','llm','gpt',
+  'claude','gemini','openai','anthropic','language model','chatbot','generative ai','diffusion',
+  'transformer','robotics','autonomous','agent','agi','alignment','hugging face','mistral','llama'
+];
+
+/* ══════════════════════════════
+   STATE
+══════════════════════════════ */
+let groqKey='', pexelsKey='', stories=[], genPost='', imgList=[], selImg=-1;
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  groqKey   = localStorage.getItem('groq_key')   || '';
+  pexelsKey = localStorage.getItem('pexels_key') || '';
+  if (groqKey) {
+    document.getElementById('inpGroq').value   = groqKey;
+    document.getElementById('inpPexels').value = pexelsKey;
+    showSaved();
+    startApp();
+  }
+});
+
+/* ══════════════════════════════
+   KEYS
+══════════════════════════════ */
+function saveKeys() {
+  const gk = document.getElementById('inpGroq').value.trim();
+  const pk = document.getElementById('inpPexels').value.trim();
+  if (!gk || !gk.startsWith('gsk_')) { showInlineErr('Please enter a valid Groq key starting with gsk_…'); return; }
+  groqKey = gk; pexelsKey = pk;
+  localStorage.setItem('groq_key', gk);
+  if (pk) localStorage.setItem('pexels_key', pk);
+  showSaved();
+  startApp();
+}
+
+function clearKeys() {
+  localStorage.removeItem('groq_key'); localStorage.removeItem('pexels_key');
+  groqKey=''; pexelsKey='';
+  document.getElementById('inpGroq').value=''; document.getElementById('inpPexels').value='';
+  document.getElementById('savedBadge').style.display='none';
+  document.getElementById('btnClear').style.display='none';
+  document.getElementById('btnRefresh').disabled=true;
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('emptyState').style.display='block';
+}
+
+function showSaved() {
+  document.getElementById('savedBadge').style.display='inline-flex';
+  document.getElementById('btnClear').style.display='inline-flex';
+  document.getElementById('btnRefresh').disabled=false;
+}
+
+function toggleVis(id) {
+  const el=document.getElementById(id);
+  el.type = el.type==='password' ? 'text' : 'password';
+}
+
+/* ══════════════════════════════
+   APP START
+══════════════════════════════ */
+async function startApp() {
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('newsLoading').style.display='flex';
+  document.getElementById('newsGrid').innerHTML='';
+  document.getElementById('newsErr').style.display='none';
+  document.getElementById('postBox').textContent='Generating your LinkedIn post…';
+  document.getElementById('postBox').className='post-box placeholder';
+  document.getElementById('btnCopy').disabled=true;
+  document.getElementById('btnRegen').disabled=true;
+  document.getElementById('postErr').style.display='none';
+  document.getElementById('liActions').style.display='none';
+  document.getElementById('imgSection').style.display='none';
+  document.getElementById('imgDivider').style.display='none';
+  document.getElementById('btnRefresh').disabled=true;
+  selImg=-1; imgList=[];
+
+  try {
+    stories = await fetchAllStories();
+    renderNews(stories);
+    document.getElementById('newsLoading').style.display='none';
+    document.getElementById('statFetched').textContent = stories._total || stories.length;
+    document.getElementById('statTime').textContent = new Date().toLocaleTimeString();
+
+    if (stories.length > 0) {
+      // Parallel: post + images
+      fetchImages();
+      await generatePost(stories[0]);
+    }
+  } catch(e) {
+    document.getElementById('newsLoading').style.display='none';
+    showErr('newsErr','Failed to load stories: ' + e.message);
+  }
+  document.getElementById('btnRefresh').disabled=false;
+}
+
+function refreshAll() { startApp(); }
+
+/* ══════════════════════════════
+   RSS FETCHING
+══════════════════════════════ */
+async function fetchAllStories() {
+  const pills = document.getElementById('srcPills');
+  pills.innerHTML = SOURCES.map((s,i) =>
+    '<span class="pill loading" id="pill'+i+'">⏳ '+s.name+'</span>'
+  ).join('');
+
+  const results = await Promise.allSettled(SOURCES.map((s,i) => fetchRSS(s,i)));
+  let all = [];
+  results.forEach((r,i) => {
+    if (r.status==='fulfilled' && r.value.length) { all=all.concat(r.value); setPill(i,'done','✓ '+SOURCES[i].name); }
+    else setPill(i,'fail','✗ '+SOURCES[i].name);
+  });
+
+  const total = all.length;
+  all = dedup(all);
+  all.forEach(a => { a._score = score(a); });
+  all.sort((a,b) => b._score - a._score);
+  const top = all.slice(0,5);
+  top._total = total;
+  return top;
+}
+
+function setPill(i,cls,txt) {
+  const el=document.getElementById('pill'+i);
+  if(el){el.className='pill '+cls;el.textContent=txt;}
+}
+
+async function fetchRSS(src,idx) {
+  const res  = await fetch(PROXY + encodeURIComponent(src.url) + '&count=20');
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  if(data.status!=='ok'||!data.items) throw new Error('Bad response');
+  let items = data.items.map(it => ({
+    title:   strip(it.title||''),
+    summary: strip(it.description||it.content||'').slice(0,440),
+    link:    it.link||it.url||'#',
+    source:  src.name,
+    pubDate: new Date(it.pubDate||it.published||Date.now()),
+    _raw:    (it.title||'')+ ' '+(it.description||'')+' '+(it.categories||[]).join(' ')
+  }));
+  if(src.filterAI) items=items.filter(it=>AI_KW.some(kw=>it._raw.toLowerCase().includes(kw)));
+  return items;
+}
+
+/* ══════════════════════════════
+   SCORING + DEDUP
+══════════════════════════════ */
+function score(a) {
+  const t=(a.title+' '+a.summary).toLowerCase();
+  let s=0;
+  for(const [w,pts] of BOOSTS) if(t.includes(w)) s+=pts;
+  s += Math.max(0, 20 - (Date.now()-(a.pubDate?.getTime()||0))/86400000*3);
+  return Math.round(s*10)/10;
+}
+
+function dedup(arr) {
+  const seen=[];
+  return arr.filter(a=>{
+    const t=a.title.toLowerCase().replace(/[^a-z0-9\s]/g,'');
+    const dup=seen.some(s=>jaccard(s,t)>0.65);
+    if(!dup){seen.push(t);return true;}return false;
+  });
+}
+
+function jaccard(a,b) {
+  const sA=new Set(a.split(/\s+/).filter(w=>w.length>3));
+  const sB=new Set(b.split(/\s+/).filter(w=>w.length>3));
+  if(!sA.size||!sB.size) return 0;
+  return [...sA].filter(w=>sB.has(w)).length/new Set([...sA,...sB]).size;
+}
+
+/* ══════════════════════════════
+   GROQ POST GENERATION
+══════════════════════════════ */
+async function generatePost(story) {
+  if(!story||!groqKey) return;
+  document.getElementById('postSpinner').style.display='flex';
+  document.getElementById('postBox').className='post-box placeholder';
+  document.getElementById('postBox').textContent='✨ Llama 3.3 70B is writing your post…';
+  document.getElementById('btnCopy').disabled=true;
+  document.getElementById('btnRegen').disabled=true;
+  document.getElementById('postErr').style.display='none';
+  document.getElementById('liActions').style.display='none';
+
+  const prompt =
+    'Write a LinkedIn post about this AI news for a CS + AI undergraduate student\'s profile.\n\n'+
+    'Title: "'+story.title+'"\nSource: '+story.source+'\nSummary: "'+story.summary+'"\n\n'+
+    'Requirements:\n'+
+    '- 150-200 words, curious student tone (not corporate)\n'+
+    '- Start directly with substance (no "Exciting news!" opener)\n'+
+    '- 1 clear technical insight or takeaway\n'+
+    '- Why this matters to the AI/tech community\n'+
+    '- End with a thought-provoking open question\n'+
+    '- Exactly 5 hashtags on a new line at the end\n'+
+    '- Max 2-3 emojis total\n'+
+    '- NO filler phrases like "In today\'s fast-paced world"';
+
+  try {
+    const res = await fetch(GROQ_EP, {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+groqKey,'Content-Type':'application/json'},
+      body:JSON.stringify({model:GROQ_MODEL,max_tokens:1024,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(err?.error?.message||'Groq API error '+res.status);
+    }
+    const data=await res.json();
+    genPost=data.choices?.[0]?.message?.content||'';
+    if(!genPost) throw new Error('Empty response from Groq');
+    document.getElementById('postBox').className='post-box';
+    document.getElementById('postBox').textContent=genPost;
+    document.getElementById('btnCopy').disabled=false;
+    document.getElementById('btnRegen').disabled=false;
+    document.getElementById('liActions').style.display='flex';
+  } catch(e) {
+    document.getElementById('postBox').textContent='Generation failed.';
+    showErr('postErr','Groq error: '+e.message);
+    document.getElementById('btnRegen').disabled=false;
+  } finally {
+    document.getElementById('postSpinner').style.display='none';
+  }
+}
+
+function regeneratePost() { if(stories.length) generatePost(stories[0]); }
+
+/* ══════════════════════════════
+   IMAGE FETCHING
+══════════════════════════════ */
+function imgKeywords(story) {
+  const stop=new Set(['the','a','an','in','on','at','by','for','with','about','from','to','of',
+    'is','are','was','new','its','and','or','but','how','what','why','will','can']);
+  const w=(story.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/);
+  return w.filter(x=>x.length>3&&!stop.has(x)).slice(0,4).join(' ')+' artificial intelligence';
+}
+
+function pollinUrl(story, seed) {
+  const p=encodeURIComponent(
+    'futuristic AI technology concept, '+story.title.slice(0,60)+
+    ', professional editorial, glowing cyan, dark background, high quality, 4K'
+  );
+  return POLLIN+p+'?width=640&height=360&nologo=true&model=flux&seed='+(seed||Math.floor(Math.random()*9999));
+}
+
+async function fetchImages() {
+  if(!stories.length) return;
+  const story=stories[0];
+  document.getElementById('imgSection').style.display='block';
+  document.getElementById('imgDivider').style.display='block';
+  document.getElementById('imgGrid').innerHTML='<div class="img-loading"><div class="spinner" style="width:28px;height:28px;border-width:2px"></div></div>';
+  document.getElementById('imgActions').style.display='none';
+  imgList=[]; selImg=-1;
+
+  try {
+    if(pexelsKey) {
+      const q=encodeURIComponent(imgKeywords(story));
+      const res=await fetch(PEXELS_EP+'?query='+q+'&per_page=2&orientation=landscape',
+        {headers:{'Authorization':pexelsKey}});
+      if(res.ok){
+        const d=await res.json();
+        if(d.photos?.length){
+          imgList=d.photos.map(p=>({url:p.src.large,credit:'© '+p.photographer+' / Pexels',src:'Pexels'}));
+        }
+      }
+    }
+    // Pad with Pollinations if needed
+    const seed1=Math.floor(Math.random()*9999), seed2=seed1+1;
+    while(imgList.length<2) imgList.push({url:pollinUrl(story,seed1+imgList.length),credit:'AI-generated',src:'Pollinations.ai'});
+    renderImages();
+  } catch(e) {
+    imgList=[{url:pollinUrl(story),credit:'AI-generated',src:'Pollinations.ai'},
+              {url:pollinUrl(story),credit:'AI-generated',src:'Pollinations.ai'}];
+    renderImages();
+  }
+}
+
+function renderImages() {
+  document.getElementById('imgGrid').innerHTML = imgList.map((img,i) =>
+    '<div class="img-card" id="imgCard'+i+'" onclick="selectImg('+i+')">' +
+      '<img src="'+img.url+'" alt="cover" loading="lazy" onerror="this.parentElement.style.opacity=0.4"/>' +
+      '<div class="img-meta">' +
+        '<div class="img-src-label">'+esc(img.src)+'</div>' +
+        '<div class="img-credit">'+esc(img.credit)+'</div>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+function selectImg(i) {
+  selImg=i;
+  document.querySelectorAll('.img-card').forEach((el,idx)=>el.classList.toggle('selected',idx===i));
+  document.getElementById('imgActions').style.display='flex';
+}
+
+function downloadImg() {
+  if(selImg<0||!imgList[selImg]) return;
+  const a=document.createElement('a');
+  a.href=imgList[selImg].url;
+  a.download='ai-digest-cover.jpg';
+  a.target='_blank';
+  a.rel='noopener';
+  a.click();
+  showToast('⬇ Image downloading! Attach it to your LinkedIn post.');
+}
+
+/* ══════════════════════════════
+   NEWS RENDER
+══════════════════════════════ */
+function renderNews(list) {
+  const grid=document.getElementById('newsGrid');
+  if(!list.length){grid.innerHTML='<p style="color:var(--t3);text-align:center;padding:24px">No AI stories found. Try refreshing.</p>';return;}
+  grid.innerHTML=list.map((s,i)=>
+    '<div class="news-card '+(i===0?'rank-1':'')+'">' +
+      '<div class="rank-badge '+(i===0?'':'o')+'">'+(i+1)+'</div>' +
+      '<div class="nbody">' +
+        '<div class="nmeta">' +
+          '<span class="src-tag">'+esc(s.source)+'</span>' +
+          '<span class="ndate">'+fmtDate(s.pubDate)+'</span>' +
+          '<span class="nscore">'+s._score+'</span>' +
+        '</div>' +
+        '<div class="ntitle">'+esc(s.title)+'</div>' +
+        '<div class="nsummary">'+esc(s.summary||'No summary.')+'</div>' +
+        '<a href="'+s.link+'" target="_blank" rel="noopener" class="nlink">Read full ↗</a>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+/* ══════════════════════════════
+   CLIPBOARD
+══════════════════════════════ */
+async function copyPost() {
+  if(!genPost) return;
+  try { await navigator.clipboard.writeText(genPost); }
+  catch {
+    const ta=document.createElement('textarea');
+    ta.value=genPost;
+    Object.assign(ta.style,{position:'fixed',top:0,left:0,opacity:0});
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  }
+  showToast('✅ Copied to clipboard!');
+  const b=document.getElementById('btnCopy');
+  b.textContent='✓ Copied!';
+  setTimeout(()=>{b.innerHTML='📋 Copy';},2200);
+}
+
+/* ══════════════════════════════
+   HELPERS
+══════════════════════════════ */
+function strip(h){const d=document.createElement('div');d.innerHTML=h;return d.textContent||'';}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtDate(d){
+  if(!d||isNaN(d.getTime())) return '';
+  const h=Math.floor((Date.now()-d.getTime())/3600000);
+  if(h<1) return 'Just now';
+  if(h<24) return h+'h ago';
+  const day=Math.floor(h/24);
+  return day<7?day+'d ago':d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function showErr(id,msg){
+  const el=document.getElementById(id);
+  el.style.display='block';
+  el.innerHTML='<div class="err-banner"><span>⚠️</span><span>'+esc(msg)+'</span></div>';
+}
+function showInlineErr(msg){
+  let b=document.getElementById('apiSection').querySelector('.err-banner');
+  if(!b){b=document.createElement('div');b.className='err-banner';
+    b.style.cssText='margin-top:10px';document.getElementById('apiSection').appendChild(b);}
+  b.innerHTML='<span>⚠️</span><span>'+esc(msg)+'</span>';
+  b.style.display='flex';setTimeout(()=>b.style.display='none',4500);
+}
+let _tt;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

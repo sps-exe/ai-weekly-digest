@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "AI Weekly Digest",
+  "version": "1.0.0",
+  "description": "Curate top AI news & auto-generate a LinkedIn post \u2014 powered by Groq (free).",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI Weekly Digest",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://api.groq.com/*",
+    "https://api.rss2json.com/*",
+    "https://api.pexels.com/*",
+    "https://image.pollinations.ai/*",
+    "https://www.linkedin.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.linkedin.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
