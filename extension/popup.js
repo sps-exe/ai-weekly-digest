@@ -220,17 +220,18 @@ async function generatePost(story) {
   $('postErr').style.display = 'none';
 
   const prompt =
-    'Write a LinkedIn post about this AI news for a CS + AI undergraduate student\'s profile.\n\n' +
+    'You are a passionate AI/CS student posting on LinkedIn. Write a highly conversational, authentic, and human-like post about this AI news.\n\n' +
     'Title: "' + story.title + '"\nSource: ' + story.source + '\nSummary: "' + story.summary + '"\n\n' +
     'Requirements:\n' +
-    '- 150–200 words, curious student tone (not corporate)\n' +
-    '- Start directly with substance — no "Exciting news!" openers\n' +
-    '- 1 clear technical insight or takeaway\n' +
-    '- Why this matters to the AI/tech community\n' +
-    '- End with a thought-provoking open question\n' +
-    '- Exactly 5 hashtags on a new line at the end\n' +
-    '- Max 2–3 emojis, placed naturally\n' +
-    '- NO filler phrases like "In today\'s fast-paced world"';
+    '- 100-150 words. Write exactly like a real person typing a quick thought.\n' +
+    '- Do NOT use typical AI marketing language (e.g., "Revolutionizing", "In today\'s fast-paced world", "Delving into").\n' +
+    '- Start with a punchy hook or a bold opinion. NO "I just read this..." or "Exciting news!".\n' +
+    '- Share 1 clear technical observation or why this caught your eye.\n' +
+    '- Keep sentences varied; use conversational formatting like em-dashes and line breaks.\n' +
+    '- End with a casual question to spark discussion.\n' +
+    '- Max 1-2 emojis organically (not at the start of paragraphs).\n' +
+    '- Exactly 4-5 relevant hashtags at the bottom.\n' +
+    '- DO NOT sound like an AI. Sound like a genuine, smart college student sharing a cool finding.';
 
   try {
     const res = await fetch(GROQ_EP, {
