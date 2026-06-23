@@ -84,6 +84,7 @@ manifest = {
   "host_permissions": [
     "https://api.groq.com/*",
     "https://api.rss2json.com/*",
+    "https://feed2json.org/*",
     "https://api.pexels.com/*",
     "https://image.pollinations.ai/*",
     "https://www.linkedin.com/*"
@@ -561,8 +562,10 @@ main{padding:14px 14px 0}
   background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);
   padding:9px 11px;display:flex;gap:10px;align-items:flex-start;
   transition:var(--ease);
+  cursor:pointer;
 }
 .mini-card:hover{background:var(--card-h);border-color:rgba(0,212,255,.2)}
+.mini-card.selected{border-color:var(--accent);background:rgba(255,255,255,0.05)}
 .mini-rank{
   width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.05);
   border:1px solid var(--border);color:var(--t3);font-size:.7rem;font-weight:700;
@@ -654,6 +657,7 @@ w('popup.js', r'''
 const GROQ_EP    = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const PROXY      = 'https://api.rss2json.com/v1/api.json?rss_url=';
+const PROXY2     = 'https://feed2json.org/convert?url=';
 const PEXELS_EP  = 'https://api.pexels.com/v1/search';
 const POLLIN     = 'https://image.pollinations.ai/prompt/';
 
@@ -759,8 +763,9 @@ async function initDashboard() {
 
   try {
     S.stories = await fetchAllStories();
+    S.selStoryIdx = 0;
     renderTopStory(S.stories[0]);
-    renderOthers(S.stories.slice(1));
+    renderOthers();
     showSection('content');
     // Non-blocking parallel: images + post
     fetchImages(S.stories[0]);
@@ -779,27 +784,47 @@ async function initDashboard() {
 async function fetchAllStories() {
   const results = await Promise.allSettled(SOURCES.map(fetchRSS));
   let all = [];
-  results.forEach(r => { if (r.status === 'fulfilled') all = all.concat(r.value); });
-  if (!all.length) throw new Error('All RSS sources failed — check internet connection.');
+  let errs = [];
+  results.forEach((r, i) => { 
+    if (r.status === 'fulfilled') all = all.concat(r.value); 
+    else errs.push(SOURCES[i].name + ': ' + r.reason.message);
+  });
+  if (!all.length) throw new Error('RSS Error: ' + errs.join(' | '));
   all = dedup(all);
   all.forEach(a => { a._score = score(a); });
   all.sort((a,b) => b._score - a._score);
-  return all.slice(0,5);
+  return all.slice(0,3);
 }
 
 async function fetchRSS(src) {
-  const res  = await fetch(PROXY + encodeURIComponent(src.url) + '&count=20');
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const data = await res.json();
-  if (data.status !== 'ok' || !data.items) throw new Error('Bad response');
-  let items = data.items.map(it => ({
-    title:   strip(it.title  || ''),
-    summary: strip(it.description || it.content || '').slice(0,400),
-    link:    it.link || it.url || '#',
-    source:  src.name,
-    pubDate: new Date(it.pubDate || it.published || Date.now()),
-    _raw:    (it.title||'') + ' ' + (it.description||'') + ' ' + (it.categories||[]).join(' ')
-  }));
+  let items = [];
+  try {
+    const res  = await fetch(PROXY + encodeURIComponent(src.url) + '&count=20');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.status !== 'ok' || !data.items) throw new Error('Bad response');
+    items = data.items.map(it => ({
+      title:   strip(it.title  || ''),
+      summary: strip(it.description || it.content || '').slice(0,400),
+      link:    it.link || it.url || '#',
+      source:  src.name,
+      pubDate: new Date(it.pubDate || it.published || Date.now()),
+      _raw:    (it.title||'') + ' ' + (it.description||'') + ' ' + (it.categories||[]).join(' ')
+    }));
+  } catch (e) {
+    const res = await fetch(PROXY2 + encodeURIComponent(src.url));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.items) throw new Error('Bad response');
+    items = data.items.map(it => ({
+      title:   strip(it.title  || ''),
+      summary: strip(it.summary || it.content_html || '').slice(0,400),
+      link:    it.url || it.id || '#',
+      source:  src.name,
+      pubDate: new Date(it.date_published || Date.now()),
+      _raw:    (it.title||'') + ' ' + (it.summary||it.content_html||'')
+    }));
+  }
   if (src.filterAI) items = items.filter(it => AI_KW.some(kw => it._raw.toLowerCase().includes(kw)));
   return items;
 }
@@ -880,6 +905,10 @@ async function generatePost(story) {
   }
 }
 
+function regeneratePost() {
+  if(S.stories[S.selStoryIdx]) generatePost(S.stories[S.selStoryIdx]);
+}
+
 /* ══════════════════════════════
    IMAGE FETCHING
 ══════════════════════════════ */
@@ -953,16 +982,26 @@ function renderTopStory(s) {
   $('storyLink').href           = s.link;
 }
 
-function renderOthers(stories) {
-  $('newsList').innerHTML = stories.map((s,i) =>
-    '<div class="mini-card">' +
-      '<div class="mini-rank">' + (i+2) + '</div>' +
+function renderOthers() {
+  $('newsList').innerHTML = S.stories.map((s,i) =>
+    '<div class="mini-card' + (i === S.selStoryIdx ? ' selected' : '') + '" onclick="selectStory('+i+')">' +
+      '<div class="mini-rank">' + (i+1) + '</div>' +
       '<div class="mini-body">' +
         '<div class="mini-title">' + esc(s.title) + '</div>' +
         '<div class="mini-meta">' + esc(s.source) + ' · ' + fmtDate(s.pubDate) + '</div>' +
       '</div>' +
     '</div>'
   ).join('');
+}
+
+function selectStory(idx) {
+  S.selStoryIdx = idx;
+  const s = S.stories[idx];
+  if (!s) return;
+  renderTopStory(s);
+  renderOthers();
+  generatePost(s);
+  fetchImages(s);
 }
 
 function renderImages(imgs) {

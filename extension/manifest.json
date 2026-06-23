@@ -25,6 +25,7 @@
   "host_permissions": [
     "https://api.groq.com/*",
     "https://api.rss2json.com/*",
+    "https://feed2json.org/*",
     "https://api.pexels.com/*",
     "https://image.pollinations.ai/*",
     "https://www.linkedin.com/*"

@@ -154,7 +154,10 @@ main{padding:30px 0 60px}
   padding:2px 7px;border-radius:99px}
 .ntitle{font-family:'Space Grotesk',sans-serif;font-size:.95rem;font-weight:600;
   margin-bottom:6px;line-height:1.38}
-.news-card.rank-1 .ntitle{color:#fff;font-size:1.02rem}
+.news-card{cursor:pointer;transition:var(--ease)}
+.news-card:hover{border-color:var(--border-h)}
+.news-card.selected{border-color:var(--accent);background:rgba(255,255,255,0.03)}
+.news-card.selected .ntitle{color:#fff;font-size:1.02rem}
 .nsummary{font-size:.8rem;color:var(--t2);line-height:1.58;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .nlink{display:inline-flex;align-items:center;gap:3px;margin-top:9px;
@@ -319,7 +322,7 @@ footer a:hover{text-decoration:underline}
 
       <!-- News Feed -->
       <div class="sec-header">
-        <div class="sec-title"><span class="dot"></span> Top 5 AI Stories</div>
+        <div class="sec-title"><span class="dot"></span> Top 3 AI Stories</div>
       </div>
       <div id="newsLoading" class="spin-wrap">
         <div class="spinner"></div>
@@ -348,6 +351,7 @@ footer a:hover{text-decoration:underline}
 const GROQ_EP    = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const PROXY      = 'https://api.rss2json.com/v1/api.json?rss_url=';
+const PROXY2     = 'https://feed2json.org/convert?url=';
 const PEXELS_EP  = 'https://api.pexels.com/v1/search';
 const POLLIN     = 'https://image.pollinations.ai/prompt/';
 
@@ -375,7 +379,7 @@ const AI_KW = [
 /* ══════════════════════════════
    STATE
 ══════════════════════════════ */
-let groqKey='', pexelsKey='', stories=[], genPost='', imgList=[], selImg=-1;
+let groqKey='', pexelsKey='', stories=[], genPost='', imgList=[], selImg=-1, selStoryIdx=0;
 
 /* ══════════════════════════════
    INIT
@@ -445,7 +449,7 @@ async function startApp() {
   document.getElementById('imgSection').style.display='none';
   document.getElementById('imgDivider').style.display='none';
   document.getElementById('btnRefresh').disabled=true;
-  selImg=-1; imgList=[];
+  selImg=-1; imgList=[]; selStoryIdx=0;
 
   try {
     stories = await fetchAllStories();
@@ -456,8 +460,8 @@ async function startApp() {
 
     if (stories.length > 0) {
       // Parallel: post + images
-      fetchImages();
-      await generatePost(stories[0]);
+      fetchImages(stories[selStoryIdx]);
+      await generatePost(stories[selStoryIdx]);
     }
   } catch(e) {
     document.getElementById('newsLoading').style.display='none';
@@ -479,16 +483,18 @@ async function fetchAllStories() {
 
   const results = await Promise.allSettled(SOURCES.map((s,i) => fetchRSS(s,i)));
   let all = [];
+  let errs = [];
   results.forEach((r,i) => {
     if (r.status==='fulfilled' && r.value.length) { all=all.concat(r.value); setPill(i,'done','✓ '+SOURCES[i].name); }
-    else setPill(i,'fail','✗ '+SOURCES[i].name);
+    else { errs.push(SOURCES[i].name + ': ' + r.reason.message); setPill(i,'fail','✗ '+SOURCES[i].name); }
   });
 
   const total = all.length;
+  if (!total) throw new Error('RSS Error: ' + errs.join(' | '));
   all = dedup(all);
   all.forEach(a => { a._score = score(a); });
   all.sort((a,b) => b._score - a._score);
-  const top = all.slice(0,5);
+  const top = all.slice(0,3);
   top._total = total;
   return top;
 }
@@ -499,18 +505,34 @@ function setPill(i,cls,txt) {
 }
 
 async function fetchRSS(src,idx) {
-  const res  = await fetch(PROXY + encodeURIComponent(src.url) + '&count=20');
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const data = await res.json();
-  if(data.status!=='ok'||!data.items) throw new Error('Bad response');
-  let items = data.items.map(it => ({
-    title:   strip(it.title||''),
-    summary: strip(it.description||it.content||'').slice(0,440),
-    link:    it.link||it.url||'#',
-    source:  src.name,
-    pubDate: new Date(it.pubDate||it.published||Date.now()),
-    _raw:    (it.title||'')+ ' '+(it.description||'')+' '+(it.categories||[]).join(' ')
-  }));
+  let items = [];
+  try {
+    const res  = await fetch(PROXY + encodeURIComponent(src.url) + '&count=20');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if(data.status!=='ok'||!data.items) throw new Error('Bad response');
+    items = data.items.map(it => ({
+      title:   strip(it.title||''),
+      summary: strip(it.description||it.content||'').slice(0,440),
+      link:    it.link||it.url||'#',
+      source:  src.name,
+      pubDate: new Date(it.pubDate||it.published||Date.now()),
+      _raw:    (it.title||'')+ ' '+(it.description||'')+' '+(it.categories||[]).join(' ')
+    }));
+  } catch(e) {
+    const res = await fetch(PROXY2 + encodeURIComponent(src.url));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.items) throw new Error('Bad response');
+    items = data.items.map(it => ({
+      title:   strip(it.title  || ''),
+      summary: strip(it.summary || it.content_html || '').slice(0,440),
+      link:    it.url || it.id || '#',
+      source:  src.name,
+      pubDate: new Date(it.date_published || Date.now()),
+      _raw:    (it.title||'') + ' ' + (it.summary||it.content_html||'')
+    }));
+  }
   if(src.filterAI) items=items.filter(it=>AI_KW.some(kw=>it._raw.toLowerCase().includes(kw)));
   return items;
 }
@@ -595,7 +617,7 @@ async function generatePost(story) {
   }
 }
 
-function regeneratePost() { if(stories.length) generatePost(stories[0]); }
+function regeneratePost() { if(stories[selStoryIdx]) generatePost(stories[selStoryIdx]); }
 
 /* ══════════════════════════════
    IMAGE FETCHING
@@ -615,9 +637,9 @@ function pollinUrl(story, seed) {
   return POLLIN+p+'?width=640&height=360&nologo=true&model=flux&seed='+(seed||Math.floor(Math.random()*9999));
 }
 
-async function fetchImages() {
-  if(!stories.length) return;
-  const story=stories[0];
+async function fetchImages(story) {
+  if(!story && stories.length) story=stories[selStoryIdx||0];
+  if(!story) return;
   document.getElementById('imgSection').style.display='block';
   document.getElementById('imgDivider').style.display='block';
   document.getElementById('imgGrid').innerHTML='<div class="img-loading"><div class="spinner" style="width:28px;height:28px;border-width:2px"></div></div>';
@@ -679,11 +701,21 @@ function downloadImg() {
 /* ══════════════════════════════
    NEWS RENDER
 ══════════════════════════════ */
+function selectStory(idx) {
+  selStoryIdx=idx;
+  document.querySelectorAll('.news-card').forEach((el,i)=>el.classList.toggle('selected',i===idx));
+  const story = stories[idx];
+  if(story) {
+    generatePost(story);
+    fetchImages(story);
+  }
+}
+
 function renderNews(list) {
   const grid=document.getElementById('newsGrid');
   if(!list.length){grid.innerHTML='<p style="color:var(--t3);text-align:center;padding:24px">No AI stories found. Try refreshing.</p>';return;}
   grid.innerHTML=list.map((s,i)=>
-    '<div class="news-card '+(i===0?'rank-1':'')+'">' +
+    '<div class="news-card '+(i===selStoryIdx?'selected':'')+'" onclick="selectStory('+i+')">' +
       '<div class="rank-badge '+(i===0?'':'o')+'">'+(i+1)+'</div>' +
       '<div class="nbody">' +
         '<div class="nmeta">' +
