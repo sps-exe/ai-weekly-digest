@@ -386,10 +386,20 @@ w('popup.html', '''<!DOCTYPE html>
 <!-- ── Toast ── -->
 <div id="toast"></div>
 
+<script src="config.js" onerror="console.log('No local config.js found.')"></script>
 <script src="popup.js"></script>
 </body>
 </html>
 ''')
+
+# ─────────────────────────────────────────────────────────────────────────────
+# config.js  (optional local config, ignored by git)
+# ─────────────────────────────────────────────────────────────────────────────
+import shutil
+if os.path.exists(os.path.join(ROOT, 'config.js')):
+    shutil.copy2(os.path.join(ROOT, 'config.js'), os.path.join(EXT, 'config.js'))
+    print('  ✓  extension/config.js')
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # popup.css
@@ -686,9 +696,9 @@ const S = {
 document.addEventListener('DOMContentLoaded', async () => {
   bindButtons();
   const stored = await chrome.storage.local.get(['groq_key','pexels_key']);
-  if (stored.groq_key) {
-    S.groqKey   = stored.groq_key;
-    S.pexelsKey = stored.pexels_key || '';
+  if (stored.groq_key || window.DEFAULT_GROQ_KEY) {
+    S.groqKey   = stored.groq_key || window.DEFAULT_GROQ_KEY;
+    S.pexelsKey = stored.pexels_key || window.DEFAULT_PEXELS_KEY || '';
     fillKeyInputs();
     showBadge(true);
     await initDashboard();

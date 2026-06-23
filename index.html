@@ -198,6 +198,9 @@ footer a:hover{text-decoration:underline}
 </head>
 <body>
 
+<!-- ── Config (Ignored by Git) ──────────────── -->
+<script src="config.js" onerror="console.log('No local config.js found.')"></script>
+
 <!-- ── Header ─────────────────────────────────── -->
 <header>
   <div class="container">
@@ -378,8 +381,8 @@ let groqKey='', pexelsKey='', stories=[], genPost='', imgList=[], selImg=-1;
    INIT
 ══════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  groqKey   = localStorage.getItem('groq_key')   || '';
-  pexelsKey = localStorage.getItem('pexels_key') || '';
+  groqKey   = localStorage.getItem('groq_key')   || window.DEFAULT_GROQ_KEY   || '';
+  pexelsKey = localStorage.getItem('pexels_key') || window.DEFAULT_PEXELS_KEY || '';
   if (groqKey) {
     document.getElementById('inpGroq').value   = groqKey;
     document.getElementById('inpPexels').value = pexelsKey;
