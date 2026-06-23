@@ -984,7 +984,7 @@ function renderTopStory(s) {
 
 function renderOthers() {
   $('newsList').innerHTML = S.stories.map((s,i) =>
-    '<div class="mini-card' + (i === S.selStoryIdx ? ' selected' : '') + '" onclick="selectStory('+i+')">' +
+    '<div class="mini-card' + (i === S.selStoryIdx ? ' selected' : '') + '" data-idx="'+i+'">' +
       '<div class="mini-rank">' + (i+1) + '</div>' +
       '<div class="mini-body">' +
         '<div class="mini-title">' + esc(s.title) + '</div>' +
@@ -992,6 +992,10 @@ function renderOthers() {
       '</div>' +
     '</div>'
   ).join('');
+  
+  document.querySelectorAll('.mini-card').forEach(el => {
+    el.addEventListener('click', () => selectStory(parseInt(el.getAttribute('data-idx'))));
+  });
 }
 
 function selectStory(idx) {
@@ -1007,13 +1011,17 @@ function selectStory(idx) {
 function renderImages(imgs) {
   $('imageGrid').innerHTML = imgs.map((img,i) =>
     '<div>' +
-      '<div class="img-thumb" id="imgThumb'+i+'" onclick="selectImg('+i+')">' +
+      '<div class="img-thumb" id="imgThumb'+i+'" data-idx="'+i+'">' +
         '<img src="'+img.url+'" alt="cover" loading="lazy" onerror="this.parentElement.style.display=\'none\'"/>' +
       '</div>' +
       '<div class="img-credit">'+esc(img.credit)+'</div>' +
       '<div class="img-source-label">'+esc(img.sourceLabel)+'</div>' +
     '</div>'
   ).join('');
+
+  document.querySelectorAll('.img-thumb').forEach(el => {
+    el.addEventListener('click', () => selectImg(parseInt(el.getAttribute('data-idx'))));
+  });
 }
 
 function selectImg(idx) {
